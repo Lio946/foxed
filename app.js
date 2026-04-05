@@ -1,4 +1,4 @@
-alert("🚀 SMART TOOL ACTIVE");
+alert("🚀 AUTO FIND & REFRESH TOOL ACTIVE");
 
 (function () {
 
@@ -22,96 +22,106 @@ alert("🚀 SMART TOOL ACTIVE");
 
   panel.innerHTML = `
     <div id="drag" style="cursor:move;font-weight:bold;margin-bottom:10px;">
-      Arbpay Smart Tool
+      Auto Finder + Refresh
     </div>
 
     <input id="amt" placeholder="Enter amount (e.g. 1000)" 
       style="width:100%;padding:10px;margin-bottom:10px;">
 
-    <button id="search" style="width:100%;padding:10px;margin-bottom:10px;">
-      🔍 Find & Click
+    <input id="interval" placeholder="Refresh interval (sec)" value="10"
+      style="width:100%;padding:10px;margin-bottom:10px;">
+
+    <button id="start" style="width:100%;padding:10px;margin-bottom:10px;">
+      ▶ START AUTO FIND
     </button>
 
-    <button id="click1" style="width:100%;padding:10px;margin-bottom:10px;">
-      Click First Offer
+    <button id="stop" style="width:100%;padding:10px;">
+      ⛔ STOP
     </button>
 
-    <div id="out">Ready</div>
+    <div id="out">Idle</div>
   `;
 
   document.body.appendChild(panel);
 
   const out = document.getElementById("out");
 
-  // ===== SMART FIND FUNCTION =====
-  function findByAmount(amount) {
+  let intervalId = null;
 
+  // ===== SEARCH FUNCTION =====
+  function scanAndClick(amount) {
     const target = amount.replace(/[^0-9]/g, "");
     const offers = document.querySelectorAll("button, div[role='button']");
 
     for (let offer of offers) {
-
-      // 🔥 deep scan inside element
       const text = offer.innerText || "";
-      const numbers = text.match(/\d+/g);
+      const nums = text.match(/\d+/g);
 
-      if (!numbers) continue;
+      if (!nums) continue;
 
-      for (let num of numbers) {
-        if (num.includes(target)) {
-
+      for (let n of nums) {
+        if (n.includes(target)) {
           offer.scrollIntoView({behavior:"smooth", block:"center"});
           offer.style.outline = "3px solid red";
-
           setTimeout(() => offer.style.outline = "", 1500);
-
           offer.click();
           return true;
         }
       }
     }
-
     return false;
   }
 
-  // ===== SEARCH BUTTON =====
-  document.getElementById("search").onclick = () => {
+  // ===== START =====
+  document.getElementById("start").onclick = () => {
     const val = document.getElementById("amt").value.trim();
+    const sec = parseInt(document.getElementById("interval").value) || 10;
 
     if (!val) {
       out.innerText = "❌ Enter amount";
       return;
     }
 
-    const ok = findByAmount(val);
+    if (intervalId) return;
 
-    out.innerText = ok ? "✅ Clicked " + val : "❌ Not found";
+    out.innerText = "🔄 Searching & refreshing...";
+
+    intervalId = setInterval(() => {
+      const found = scanAndClick(val);
+
+      if (found) {
+        out.innerText = "✅ Found & Clicked " + val;
+        clearInterval(intervalId);
+        intervalId = null;
+      } else {
+        out.innerText = "🔄 Not found, refreshing...";
+        location.reload(); // refresh page
+      }
+
+    }, sec * 1000);
   };
 
-  // fallback button
-  document.getElementById("click1").onclick = () => {
-    const offers = document.querySelectorAll("button, div[role='button']");
-    if (offers[0]) {
-      offers[0].click();
-      out.innerText = "✅ Clicked first offer";
+  // ===== STOP =====
+  document.getElementById("stop").onclick = () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+      out.innerText = "⛔ Stopped";
     }
   };
 
   // ===== DRAG =====
   let isDown = false, x, y;
-
   document.getElementById("drag").onmousedown = e => {
     isDown = true;
     x = e.clientX - panel.offsetLeft;
     y = e.clientY - panel.offsetTop;
   };
-
   document.onmousemove = e => {
     if (!isDown) return;
     panel.style.left = e.clientX - x + "px";
     panel.style.top = e.clientY - y + "px";
   };
-
   document.onmouseup = () => isDown = false;
 
 })();
