@@ -33,10 +33,10 @@ alert("🔥 SCRIPT RUNNING");
   panel.id = "arb_panel";
   panel.style = `
     position:fixed;
-    top:50px;
+    top:40px;
     right:20px;
-    width:360px;
-    max-height:450px;
+    width:380px;
+    max-height:500px;
     background:#111;
     color:#0f0;
     padding:20px;
@@ -45,26 +45,37 @@ alert("🔥 SCRIPT RUNNING");
     font-size:18px;
     font-family:monospace;
     overflow:auto;
-    box-shadow:0 0 15px #000;
+    box-shadow:0 0 20px #000;
+    cursor:move;
   `;
 
   panel.innerHTML = `
-    <div style="font-weight:bold;font-size:20px;margin-bottom:15px;text-align:center;">Arbpay Tool</div>
+    <div id="panel_header" style="font-weight:bold;font-size:22px;margin-bottom:15px;text-align:center;cursor:move;">Arbpay Auto-Click Tool</div>
     <input id="searchAmount" type="text" placeholder="Enter amount to search" style="width:100%;padding:10px;margin-bottom:10px;font-size:16px;">
     <button id="searchBtn" style="width:100%;padding:12px;margin-bottom:10px;font-size:16px;">🔍 SEARCH & CLICK</button>
+    <button id="startObserverBtn" style="width:100%;padding:12px;margin-bottom:10px;font-size:16px;">⚡ START AUTO OBSERVER</button>
+    <button id="stopObserverBtn" style="width:100%;padding:12px;margin-bottom:10px;font-size:16px;">⏹ STOP AUTO OBSERVER</button>
     <div id="output" style="margin-top:10px;font-size:18px;">Idle</div>
   `;
 
   document.body.appendChild(panel);
 
-  // --- SEARCH & CLICK FUNCTION ---
+  const searchBtn = document.getElementById("searchBtn");
+  const startObserverBtn = document.getElementById("startObserverBtn");
+  const stopObserverBtn = document.getElementById("stopObserverBtn");
+  const input = document.getElementById("searchAmount");
+  const output = document.getElementById("output");
+
+  // --- SEARCH & CLICK ---
   function searchAndClick(amount) {
     let found = false;
-
-    // 1️⃣ scan all elements with text
     const elements = document.querySelectorAll("body *");
+
     elements.forEach(el => {
       if (el.innerText && el.innerText.trim() === amount) {
+        el.scrollIntoView({behavior:"smooth", block:"center"});
+        el.style.border = "2px solid red";
+        setTimeout(() => el.style.border = "", 1500);
         el.click();
         found = true;
       }
@@ -72,11 +83,6 @@ alert("🔥 SCRIPT RUNNING");
 
     return found;
   }
-
-  // --- BUTTON LOGIC ---
-  const searchBtn = document.getElementById("searchBtn");
-  const output = document.getElementById("output");
-  const input = document.getElementById("searchAmount");
 
   searchBtn.onclick = () => {
     const val = input.value.trim();
@@ -87,6 +93,59 @@ alert("🔥 SCRIPT RUNNING");
 
     const clicked = searchAndClick(val);
     output.innerText = clicked ? `✅ Found & clicked ${val}` : `❌ ${val} not found`;
+  };
+
+  // --- AUTO OBSERVER ---
+  let observer = null;
+
+  function startObserver() {
+    if (observer) return;
+    const val = input.value.trim();
+    if (!val) {
+      output.innerText = "❌ Enter an amount first";
+      return;
+    }
+
+    observer = new MutationObserver(() => {
+      const clicked = searchAndClick(val);
+      if (clicked) output.innerText = `✅ Auto-clicked ${val}`;
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    output.innerText = "⚡ Auto observer started";
+  }
+
+  function stopObserver() {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+      output.innerText = "⏹ Auto observer stopped";
+    }
+  }
+
+  startObserverBtn.onclick = startObserver;
+  stopObserverBtn.onclick = stopObserver;
+
+  // --- MAKE PANEL DRAGGABLE ---
+  const header = document.getElementById("panel_header");
+  let isDragging = false, offsetX = 0, offsetY = 0;
+
+  header.onmousedown = (e) => {
+    isDragging = true;
+    offsetX = e.clientX - panel.offsetLeft;
+    offsetY = e.clientY - panel.offsetTop;
+    document.body.style.userSelect = 'none';
+  };
+
+  document.onmousemove = (e) => {
+    if (!isDragging) return;
+    panel.style.left = e.clientX - offsetX + "px";
+    panel.style.top = e.clientY - offsetY + "px";
+  };
+
+  document.onmouseup = () => {
+    isDragging = false;
+    document.body.style.userSelect = '';
   };
 
 })();
