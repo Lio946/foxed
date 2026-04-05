@@ -1,3 +1,4 @@
+alert("🔥 NEW VERSION RUNNING");
 (async function () {
 
   if (!location.hostname.includes("arbpay.me")) {
