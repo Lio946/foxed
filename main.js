@@ -1,16 +1,13 @@
 (async function () {
 
-  // ✅ Run only on arbpay
   if (!location.hostname.includes("arbpay.me")) {
     alert("❌ This works only on arbpay.me");
     return;
   }
 
-  // 👤 Get UID
-  const UID = localStorage.getItem("arb_uid") || prompt("Enter your UID");
+  const UID = localStorage.getItem("arb_uid") || prompt("Enter UID");
   localStorage.setItem("arb_uid", UID);
 
-  // 🔐 Load allowed users
   const res = await fetch("https://raw.githubusercontent.com/darkl78-gif/smart-assistant/main/users.json");
   const users = await res.json();
 
@@ -19,30 +16,50 @@
     return;
   }
 
-  alert("✅ Access Granted");
-
-  // 🎛️ Create UI
+  // 🟢 CREATE PANEL
   const panel = document.createElement("div");
-  panel.style = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: black;
-    color: lime;
-    padding: 10px;
-    z-index: 99999;
-    border-radius: 8px;
-  `;
+  panel.style.position = "fixed";
+  panel.style.top = "50px";
+  panel.style.right = "20px";
+  panel.style.width = "220px";
+  panel.style.background = "#111";
+  panel.style.color = "#0f0";
+  panel.style.padding = "15px";
+  panel.style.borderRadius = "10px";
+  panel.style.zIndex = "999999";
+  panel.style.fontSize = "16px";
+  panel.style.boxShadow = "0 0 10px #000";
 
   panel.innerHTML = `
-    <div>Arbpay Tool</div>
-    <button id="startBtn">Start</button>
-    <button id="stopBtn">Stop</button>
-    <div id="output">Idle</div>
+    <div id="drag" style="cursor:move; font-weight:bold; margin-bottom:10px;">
+      Arbpay Tool
+    </div>
+    <button id="startBtn" style="width:100%; padding:8px; margin-bottom:5px;">▶ Start</button>
+    <button id="stopBtn" style="width:100%; padding:8px;">⏹ Stop</button>
+    <div id="output" style="margin-top:10px;">Idle</div>
   `;
 
   document.body.appendChild(panel);
 
+  // 🟢 DRAG FUNCTION
+  let isDragging = false, offsetX, offsetY;
+
+  document.getElementById("drag").onmousedown = (e) => {
+    isDragging = true;
+    offsetX = e.clientX - panel.offsetLeft;
+    offsetY = e.clientY - panel.offsetTop;
+  };
+
+  document.onmousemove = (e) => {
+    if (isDragging) {
+      panel.style.left = (e.clientX - offsetX) + "px";
+      panel.style.top = (e.clientY - offsetY) + "px";
+    }
+  };
+
+  document.onmouseup = () => isDragging = false;
+
+  // 🟢 LOGIC
   let interval = null;
 
   function findAmount() {
@@ -54,20 +71,28 @@
     return el ? el.innerText : "Not found";
   }
 
-  document.getElementById("startBtn").onclick = () => {
-    if (interval) return;
+  // 🟢 BUTTON FIX (IMPORTANT)
+  setTimeout(() => {
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const output = document.getElementById("output");
 
-    interval = setInterval(() => {
-      const amt = findAmount();
-      document.getElementById("output").innerText = "Amount: " + amt;
-      console.log("Amount:", amt);
-    }, 2000);
-  };
+    startBtn.onclick = () => {
+      if (interval) return;
 
-  document.getElementById("stopBtn").onclick = () => {
-    clearInterval(interval);
-    interval = null;
-    document.getElementById("output").innerText = "Stopped";
-  };
+      interval = setInterval(() => {
+        const amt = findAmount();
+        output.innerText = "Amount: " + amt;
+        console.log("Amount:", amt);
+      }, 2000);
+    };
+
+    stopBtn.onclick = () => {
+      clearInterval(interval);
+      interval = null;
+      output.innerText = "Stopped";
+    };
+
+  }, 500);
 
 })();
